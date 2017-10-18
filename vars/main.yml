@@ -1,0 +1,10 @@
+---
+# vars file for account_hardening/
+#
+minlenVar: "15"
+maxdaysVar: "90"
+dcreditVar: "-1"
+ucreditVar: "-1" 
+lcreditVar: "-1"
+ocreditVar: "-1"
+backup_dir: "/root/account_hardening"

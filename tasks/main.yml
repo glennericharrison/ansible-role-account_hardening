@@ -1,0 +1,48 @@
+---
+# tasks file for account_hardening/
+#
+  - name: Creating a copy /etc/pam.d/system-auth files
+    stat:
+      path: /etc/pam.d/system-auth-ac
+    register: system_auth_var
+
+    file:
+      state: directory
+      recurse: yes
+      path: "{{ backup_dir }}"
+      owner: root
+      group: root
+      mode: 0700
+
+    copy:
+      remote_src: true
+      src: /etc/pam.d/system-auth-ac
+      dest: "{{ backup_dir }}/system-auth-ac.bck"
+      owner: root
+      group: root
+      mode: 0700
+    when: system_auth_var.exists
+
+    stat:
+      path: /etc/pam.d/system-auth-ac.cdc
+    register: system_auth_centrify_var
+
+    copy:
+      remote_src: true
+      src: /etc/pam.d/system-auth-ac.cdc
+      dest: "{{ backup_dir }}/system-auth-ac.cdc.bck"
+      owner: root
+      group: root
+      mode: 0700
+   when: system_auth_centrify_var.exists
+
+  - name: Creating a copy of /etc/login.defs
+    stat:
+      path: /etc/login.defs
+    register: login_defs_var
+
+    copy:
+      remote_src: true
+      src: /etc/login.defs
+      dest: "{{ backup_dir }}/login.defs.bck"
+    when: login_defs_var.exists
