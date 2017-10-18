@@ -46,3 +46,74 @@
       src: /etc/login.defs
       dest: "{{ backup_dir }}/login.defs.bck"
     when: login_defs_var.exists
+
+  - name: Configuring password minimum and complexity through pamd
+    pamd:
+      name: system-auth
+      type: password
+      control: requisite
+      module_path: pam_cracklib.so
+      module_arguments: 'try_first_pass
+        retry=3
+        lcredit={{ lcreditVar }}
+        ucredit={{ ucreditVar }}
+        dcredit={{ dcreditVar }}
+        ocredit={{ ocreditVar }}'
+      state: updated
+    when: > 
+      ansible_distribution_major_version == '5' or
+      ansible_distribution_major_version == '6'
+
+    pamd:
+      name: system-auth
+      type: password
+      control: requisite
+      module_path: pam_pwquality.so
+      module_arguments: 'try_first_pass
+        local_users_only
+        retry=3
+        authtok_type=
+        lcredit={{ lcreditVar }}
+        ucredit={{ ucreditVar }}
+        dcredit={{ dcreditVar }}
+        ocredit={{ ocreditVar }}'
+      state: updated
+    when: ansible_distribution_major_version == '7'
+
+  - name: Configuring password re-use through pamd
+    pamd:
+      name: system-auth
+      type: password
+      control: sufficient
+      module_path: pam_unix.so
+      module_arguments: 'sha512
+        shadow
+        try_first_pass
+        use_authtok
+        remember={{ rememberVar }}'
+      state: updated
+
+    pamd:
+      name: system-auth
+      type: auth
+      control: sufficient
+      module_path: pam_unix.so
+      module_arguments: 'try_first_pass'
+      state: updated
+    when: >
+      ansible_distribution_major_version == '5'
+      ansible_distribution_major_version == '6'
+
+  - name: Configuring password expiration/rotation (PASS_MAX_DAYS) in /etc/login.defs
+    replace:
+      backup: yes
+      path: /etc/login.defs
+      regexp: 'PASS_MAX_DAYS.*'
+      replace: 'PASS_MAX_DAYS        {{ maxdaysVar }}'
+
+  - name: Configuring password minimum length in /etc/login.defs
+    replace:
+      backup: yes
+      path: /etc/login.defs
+      regexp: "PASS_MIN_LEN.*"
+      replace: 'PASS_MIN_LEN        {{ minlenVar }}'
