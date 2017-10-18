@@ -38,6 +38,7 @@ galaxy_info:
     - 6
     - 7
   - name: CentOS
+    versions:
     - 5
     - 6
     - 7
