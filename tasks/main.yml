@@ -1,119 +1,127 @@
 ---
 # tasks file for account_hardening/
 #
-  - name: Creating a copy /etc/pam.d/system-auth files
-    stat:
-      path: /etc/pam.d/system-auth-ac
-    register: system_auth_var
 
-    file:
-      state: directory
-      recurse: yes
-      path: "{{ backup_dir }}"
-      owner: root
-      group: root
-      mode: 0700
+- name: Creating "{{ backup_dir }}" for storage of file backups 
+  file:
+    state: directory
+    recurse: yes
+    path: "{{ backup_dir }}"
+    owner: root
+    group: root
+    mode: 0700
 
-    copy:
-      remote_src: true
-      src: /etc/pam.d/system-auth-ac
-      dest: "{{ backup_dir }}/system-auth-ac.bck"
-      owner: root
-      group: root
-      mode: 0700
-    when: system_auth_var.exists
+- name: Checking for /etc/pam.d/system-auth-ac file
+  stat:
+    path: /etc/pam.d/system-auth-ac
+  register: system_auth_var
 
-    stat:
-      path: /etc/pam.d/system-auth-ac.cdc
-    register: system_auth_centrify_var
+- name: Creating a backup of /etc/pam.d/system-auth-ac if found 
+  copy:
+    remote_src: true
+    src: /etc/pam.d/system-auth-ac
+    dest: "{{ backup_dir }}/system-auth-ac.bck"
+    owner: root
+    group: root
+    mode: 0700
+  when: system_auth_var.stat.exists
 
-    copy:
-      remote_src: true
-      src: /etc/pam.d/system-auth-ac.cdc
-      dest: "{{ backup_dir }}/system-auth-ac.cdc.bck"
-      owner: root
-      group: root
-      mode: 0700
-   when: system_auth_centrify_var.exists
+- name: Checking for /etc/pam.d/system-auth-ac.cdc (if CentrifyDC is used) 
+  stat:
+    path: /etc/pam.d/system-auth-ac.cdc
+  register: system_auth_centrify_var
 
-  - name: Creating a copy of /etc/login.defs
-    stat:
-      path: /etc/login.defs
-    register: login_defs_var
+- name: Creating a backup of /etc/pam.d/system-auth-ac.cdc if found
+  copy:
+    remote_src: true
+    src: /etc/pam.d/system-auth-ac.cdc
+    dest: "{{ backup_dir }}/system-auth-ac.cdc.bck"
+    owner: root
+    group: root
+    mode: 0700
+  when: system_auth_centrify_var.stat.exists
 
-    copy:
-      remote_src: true
-      src: /etc/login.defs
-      dest: "{{ backup_dir }}/login.defs.bck"
-    when: login_defs_var.exists
+- name: Checking for /etc/login.defs
+  stat:
+    path: /etc/login.defs
+  register: login_defs_var
 
-  - name: Configuring password minimum and complexity through pamd
-    pamd:
-      name: system-auth
-      type: password
-      control: requisite
-      module_path: pam_cracklib.so
-      module_arguments: 'try_first_pass
-        retry=3
-        lcredit={{ lcreditVar }}
-        ucredit={{ ucreditVar }}
-        dcredit={{ dcreditVar }}
-        ocredit={{ ocreditVar }}'
-      state: updated
-    when: > 
-      ansible_distribution_major_version == '5' or
-      ansible_distribution_major_version == '6'
+- name: Creating a copy of /etc/login.defs if found
+  copy:
+    remote_src: true
+    src: /etc/login.defs
+    dest: "{{ backup_dir }}/login.defs.bck"
+  when: login_defs_var.stat.exists
 
-    pamd:
-      name: system-auth
-      type: password
-      control: requisite
-      module_path: pam_pwquality.so
-      module_arguments: 'try_first_pass
-        local_users_only
-        retry=3
-        authtok_type=
-        lcredit={{ lcreditVar }}
-        ucredit={{ ucreditVar }}
-        dcredit={{ dcreditVar }}
-        ocredit={{ ocreditVar }}'
-      state: updated
-    when: ansible_distribution_major_version == '7'
+- name: Configuring password minimum and complexity through pamd (EL5/6)
+  pamd:
+    name: system-auth
+    type: password
+    control: requisite
+    module_path: pam_cracklib.so
+    module_arguments: 'try_first_pass
+      retry=3
+      lcredit={{ lcreditVar }}
+      ucredit={{ ucreditVar }}
+      dcredit={{ dcreditVar }}
+      ocredit={{ ocreditVar }}'
+    state: updated
+  when: > 
+    ansible_distribution_major_version == '5' or
+    ansible_distribution_major_version == '6'
 
-  - name: Configuring password re-use through pamd
-    pamd:
-      name: system-auth
-      type: password
-      control: sufficient
-      module_path: pam_unix.so
-      module_arguments: 'sha512
-        shadow
-        try_first_pass
-        use_authtok
-        remember={{ rememberVar }}'
-      state: updated
+- name: Configuring password minimum and complexity through pamd (EL7)
+  pamd:
+    name: system-auth
+    type: password
+    control: requisite
+    module_path: pam_pwquality.so
+    module_arguments: 'try_first_pass
+      local_users_only
+      retry=3
+      authtok_type=
+      lcredit={{ lcreditVar }}
+      ucredit={{ ucreditVar }}
+      dcredit={{ dcreditVar }}
+      ocredit={{ ocreditVar }}'
+    state: updated
+  when: ansible_distribution_major_version == '7'
 
-    pamd:
-      name: system-auth
-      type: auth
-      control: sufficient
-      module_path: pam_unix.so
-      module_arguments: 'try_first_pass'
-      state: updated
-    when: >
-      ansible_distribution_major_version == '5'
-      ansible_distribution_major_version == '6'
+- name: Configuring password re-use through pamd
+  pamd:
+    name: system-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    module_arguments: 'sha512
+      shadow
+      try_first_pass
+      use_authtok
+      remember={{ rememberVar }}'
+    state: updated
 
-  - name: Configuring password expiration/rotation (PASS_MAX_DAYS) in /etc/login.defs
-    replace:
-      backup: yes
-      path: /etc/login.defs
-      regexp: 'PASS_MAX_DAYS.*'
-      replace: 'PASS_MAX_DAYS        {{ maxdaysVar }}'
+- name: Removing nullok password setting in pamd (EL5/6)
+  pamd:
+    name: system-auth
+    type: auth
+    control: sufficient
+    module_path: pam_unix.so
+    module_arguments: 'try_first_pass'
+    state: updated
+  when: >
+    ansible_distribution_major_version == '5' or
+    ansible_distribution_major_version == '6'
 
-  - name: Configuring password minimum length in /etc/login.defs
-    replace:
-      backup: yes
-      path: /etc/login.defs
-      regexp: "PASS_MIN_LEN.*"
-      replace: 'PASS_MIN_LEN        {{ minlenVar }}'
+- name: Configuring password expiration/rotation (PASS_MAX_DAYS) in /etc/login.defs
+  replace:
+    backup: yes
+    path: /etc/login.defs
+    regexp: 'PASS_MAX_DAYS.*'
+    replace: 'PASS_MAX_DAYS        {{ maxdaysVar }}'
+
+- name: Configuring password minimum length in /etc/login.defs
+  replace:
+    backup: yes
+    path: /etc/login.defs
+    regexp: "PASS_MIN_LEN.*"
+    replace: 'PASS_MIN_LEN        {{ minlenVar }}'
