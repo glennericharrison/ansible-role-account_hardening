@@ -122,7 +122,7 @@
 - name: Configuring password expiration/rotation (PASS_MIN_DAYS) in /etc/login.defs
   replace:
     backup: yes
-    path: /etc/loging.defs
+    path: /etc/login.defs
     regexp: 'PASS_MIN_DAYS.*'
     replace: 'PASS_MIN_DAYS     {{ mindaysVar }}'
 
