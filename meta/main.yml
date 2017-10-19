@@ -1,6 +1,6 @@
 galaxy_info:
   author: Glenn E. Harrison
-  description: Apply password complexity / aging thought pamd and login.defs
+  description: Apply password complexity / aging through pamd and login.defs for EL5/6/7
 
   # If the issue tracker for your role is not on github, uncomment the
   # next line and provide a value
