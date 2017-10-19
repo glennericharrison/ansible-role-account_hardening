@@ -3,6 +3,7 @@
 #
 minlenVar: "15"
 maxdaysVar: "90"
+mindaysVar: "1"
 dcreditVar: "-1"
 ucreditVar: "-1" 
 lcreditVar: "-1"

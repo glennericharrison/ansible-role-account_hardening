@@ -117,11 +117,18 @@
     backup: yes
     path: /etc/login.defs
     regexp: 'PASS_MAX_DAYS.*'
-    replace: 'PASS_MAX_DAYS        {{ maxdaysVar }}'
+    replace: 'PASS_MAX_DAYS     {{ maxdaysVar }}'
+
+- name: Configuring password expiration/rotation (PASS_MIN_DAYS) in /etc/login.defs
+  replace:
+    backup: yes
+    path: /etc/loging.defs
+    regexp: 'PASS_MIN_DAYS.*'
+    replace: 'PASS_MIN_DAYS     {{ mindaysVar }}'
 
 - name: Configuring password minimum length in /etc/login.defs
   replace:
     backup: yes
     path: /etc/login.defs
     regexp: "PASS_MIN_LEN.*"
-    replace: 'PASS_MIN_LEN        {{ minlenVar }}'
+    replace: 'PASS_MIN_LEN     {{ minlenVar }}'
